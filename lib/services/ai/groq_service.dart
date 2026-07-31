@@ -12,6 +12,7 @@ class GroqService {
   static String get _baseUrl => ApiConfig.groqBaseUrl;
   static String get _apiKey => ApiConfig.groqApiKey;
   static String get _model => ApiConfig.groqModel;
+  static String get _visionModel => ApiConfig.groqVisionModel;
 
   late final Dio _dio;
 
@@ -113,7 +114,7 @@ class GroqService {
       final prompt = _getFoodValidationPrompt(language);
 
       final requestBody = {
-        "model": _model,
+        "model": _visionModel,
         "messages": [
           {
             "role": "user",
@@ -253,7 +254,7 @@ class GroqService {
       final prompt = _getLocalizedPrompt(language);
 
       final requestBody = {
-        "model": _model,
+        "model": _visionModel,
         "messages": [
           {
             "role": "user",
@@ -633,7 +634,7 @@ Return ONLY a raw JSON object matching this structure:
 }''';
 
       final requestBody = {
-        "model": _model,
+        "model": _visionModel,
         "messages": [
           {
             "role": "user",
