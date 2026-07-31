@@ -22,7 +22,7 @@
 Try the latest Android version:
 
 **📥 APK Download:**  
-https://github.com/subhash-varun/nutriscan/releases/latest
+https://drive.google.com/drive/folders/1Fe-NJ_TS3Lr9PG_Aczqvw053XbIlyaYS?usp=sharing
 
 > Replace this with your actual APK release URL if different.
 
