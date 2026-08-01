@@ -8,6 +8,7 @@ import 'package:nutriscan/providers/ads/admob_provider.dart';
 import 'package:nutriscan/providers/coins/coin_provider.dart';
 import 'package:nutriscan/providers/notifications/notification_provider.dart';
 import 'package:nutriscan/providers/payment/subscription_provider.dart';
+import 'package:nutriscan/services/ai/gemini_service.dart';
 import 'package:nutriscan/services/ai/groq_service.dart';
 import 'package:nutriscan/services/database/database_helper.dart';
 import 'package:nutriscan/services/storage/firebase_storage_service.dart';
@@ -20,6 +21,7 @@ class FoodProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   final GroqService _groqService = GroqService();
+  final GeminiService _geminiService = GeminiService();
   final DatabaseHelper _databaseHelper = DatabaseHelper();
   final FirebaseStorageService _storageService = FirebaseStorageService();
   AdMobProvider? _admobProvider;
@@ -127,18 +129,30 @@ class FoodProvider with ChangeNotifier {
         return;
       }
 
-      Map<String, dynamic> analysisResult = await _groqService
-          .analyzeFoodImage(imageFile, language: language)
-          .timeout(const Duration(seconds: 30));
+      Map<String, dynamic> analysisResult;
+      try {
+        analysisResult = await _groqService
+            .analyzeFoodImage(imageFile, language: language)
+            .timeout(const Duration(seconds: 30));
+      } catch (e) {
+        try {
+          analysisResult = await _geminiService
+              .analyzeFoodImage(imageFile, language: language)
+              .timeout(const Duration(seconds: 30));
+        } catch (_) {
+          rethrow;
+        }
+      }
 
-      if (analysisResult['food_name'] == null ||
-          analysisResult['food_name'].toString().trim().isEmpty) {
+      final String foodName = (analysisResult['food_name'] ?? analysisResult['name'] ?? '').toString().trim();
+      if (foodName.isEmpty) {
         final errorMessage = _groqService.getLocalizedErrorMessage(
           'invalid_request',
           language,
         );
         throw Exception(errorMessage);
       }
+      analysisResult['food_name'] = foodName;
 
       bool shouldUploadToFirebase =
           _allowFirebaseUpload &&

@@ -272,19 +272,34 @@ class GroqService {
         "max_tokens": 2048,
       };
 
-      final response = await _dio.post(
-        _baseUrl,
-        data: requestBody,
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'CalorieTracker/1.0',
-            'Authorization': 'Bearer $_apiKey',
-          },
-        ),
-      );
+      Response? response;
+      int attempts = 0;
 
-      if (response.statusCode == 200) {
+      while (attempts < 3) {
+        try {
+          response = await _dio.post(
+            _baseUrl,
+            data: requestBody,
+            options: Options(
+              headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': 'CalorieTracker/1.0',
+                'Authorization': 'Bearer $_apiKey',
+              },
+            ),
+          );
+          break;
+        } on DioException catch (e) {
+          if (e.response?.statusCode == 429 && attempts < 2) {
+            attempts++;
+            await Future.delayed(Duration(seconds: 2 * attempts));
+            continue;
+          }
+          rethrow;
+        }
+      }
+
+      if (response != null && response.statusCode == 200) {
         final content = _extractContentFromResponse(response.data);
         if (content.isEmpty) {
           throw Exception(getLocalizedErrorMessage('parse_error', language));
@@ -301,7 +316,7 @@ class GroqService {
       } else {
         throw Exception(
           getLocalizedErrorMessage('api_failed', language, {
-            'status': response.statusCode.toString(),
+            'status': response?.statusCode.toString() ?? 'unknown',
           }),
         );
       }
